@@ -1,7 +1,7 @@
 Settings:
   max_history: 21
   load_images: true
-  filename_template: "RSS精选_{date}.epub"
+  filename_template: "RSS精选.epub"
 
 Feeds:
   - url: "https://nostalgia.bearblog.dev/feed/"
