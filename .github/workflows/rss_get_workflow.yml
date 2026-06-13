@@ -1,16 +1,19 @@
-name: RSS Collector to EPUB
+name: RSS to EPUB Archive
 
 on:
   schedule:
-    - cron: '0 1 * * *'
+    - cron: '0 1 * * *'  # 每天 UTC 01:00
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
+    - name: Checkout repository
       uses: actions/checkout@v4
 
     - name: Set up Python
@@ -20,17 +23,26 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install feedparser pyyaml ebooklib lxml beautifulsoup4 readability-lxml
+        python -m pip install --upgrade pip
+        pip install pyyaml feedparser requests ebooklib pillow beautifulsoup4 readability-lxml lxml
 
-    - name: Run generator
+    - name: Run RSS generator
+      env:
+        CONFIG_YAML: ${{ secrets.CONFIG_YAML }}
       run: |
         python main.py
 
     - name: Commit EPUB files
       run: |
-        git config user.name "github-actions"
-        git config user.email "github-actions@github.com"
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
 
-        git add articles/*.epub || true
-        git commit -m "update rss epubs" || echo "no changes"
+        git add articles/
+
+        if git diff --cached --quiet; then
+          echo "No changes to commit"
+          exit 0
+        fi
+
+        git commit -m "update rss epubs"
         git push
