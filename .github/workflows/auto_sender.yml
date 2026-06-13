@@ -1,8 +1,8 @@
-name: Send Latest RSS EPUB to Kindle
+name: Send Latest EPUB to Kindle
 
 on:
   schedule:
-    - cron: '30 23 * * *'  # UTC 23:30 = 北京时间 07:30
+    - cron: '30 23 * * *'  # 北京时间 07:30
   workflow_dispatch: {}
 
 jobs:
@@ -10,26 +10,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Find latest EPUB in articles
         id: find
         run: |
-          echo "Scanning articles..."
-
-          latest_epub=$(find articles -type f -name "*.epub" | sort | tail -n 1)
+          latest_epub=$(ls -t articles/*.epub 2>/dev/null | head -n 1)
 
           if [ -z "$latest_epub" ]; then
-            echo "No EPUB found in articles/"
+            echo "No EPUB found"
             exit 1
           fi
 
-          echo "LATEST_EPUB=$latest_epub" >> $GITHUB_ENV
-
+          echo "EPUB=$latest_epub" >> $GITHUB_ENV
           echo "Latest EPUB: $latest_epub"
 
-      - name: Send EPUB to Kindle via SMTP
+      - name: Send EPUB via SMTP
         env:
           SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
@@ -37,7 +34,7 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           KINDLE_EMAIL: wiorigami@kindle.com
           FROM_EMAIL: ${{ secrets.SMTP_USER }}
-          EPUB: ${{ env.LATEST_EPUB }}
+          EPUB: ${{ env.EPUB }}
         run: |
           python3 << 'EOF'
           import os
