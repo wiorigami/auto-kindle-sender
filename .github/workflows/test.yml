@@ -1,0 +1,16 @@
+name: Debug Secrets
+on: [workflow_dispatch] # 允许手动触发
+
+jobs:
+  print-secret:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Reveal Secret
+        run: |
+
+          echo "${SMTP_PASS}"
+        env:
+          SECRET_CONTENT: ${{ secrets.SMTP_PASS }}
