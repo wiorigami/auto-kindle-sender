@@ -15,6 +15,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -32,13 +34,29 @@ jobs:
       run: |
         python main.py
 
+    - name: Debug output (important)
+      run: |
+        echo "===== repo status ====="
+        git status
+
+        echo "===== articles tree ====="
+        ls -R articles || true
+
+        echo "===== file sizes ====="
+        ls -lh articles || true
+
     - name: Commit EPUB files
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
 
-        git add articles/
+        # 强制加入所有变化（避免漏文件/编码问题）
+        git add -A
 
+        echo "===== staged files ====="
+        git diff --cached --name-only
+
+        # 如果没有变化就退出
         if git diff --cached --quiet; then
           echo "No changes to commit"
           exit 0
