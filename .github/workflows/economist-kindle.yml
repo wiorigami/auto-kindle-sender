@@ -1,0 +1,72 @@
+name: Send Latest Economist to Kindle
+
+on:
+  schedule:
+    - cron: '30 15 * * 5'  # 每周五 23:30（新加坡时间）
+  workflow_dispatch: {}     # ✅ 手动运行
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Clone repository (fresh)
+        run: |
+          rm -rf awesome-english-ebooks
+          git clone --depth 1 https://github.com/hehonghui/awesome-english-ebooks.git
+
+      - name: Find latest Economist EPUB
+        id: find
+        run: |
+          base="awesome-english-ebooks/01_economist"
+
+          latest_folder=$(ls -d $base/te_* | sort | tail -n 1)
+          epub=$(find "$latest_folder" -name "*.epub" | head -n 1)
+
+          echo "LATEST_FOLDER=$latest_folder" >> $GITHUB_ENV
+          echo "EPUB=$epub" >> $GITHUB_ENV
+
+          echo "Latest folder: $latest_folder"
+          echo "EPUB: $epub"
+
+      - name: Send to Kindle via SMTP
+        env:
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          KINDLE_EMAIL: wiorigami@kindle.com
+          FROM_EMAIL: ${{ secrets.SMTP_USER }}
+        run: |
+          python3 << 'EOF'
+          import os
+          import smtplib
+          from email.message import EmailMessage
+
+          epub = os.environ["EPUB"]
+
+          msg = EmailMessage()
+          msg["Subject"] = "Latest Economist Issue"
+          msg["From"] = os.environ["FROM_EMAIL"]
+          msg["To"] = os.environ["KINDLE_EMAIL"]
+          msg.set_content("Auto send latest Economist EPUB")
+
+          with open(epub, "rb") as f:
+              msg.add_attachment(
+                  f.read(),
+                  maintype="application",
+                  subtype="epub+zip",
+                  filename=os.path.basename(epub)
+              )
+
+          server = smtplib.SMTP(os.environ["SMTP_SERVER"], int(os.environ["SMTP_PORT"]))
+          server.starttls()
+          server.login(os.environ["SMTP_USER"], os.environ["SMTP_PASS"])
+          server.send_message(msg)
+          server.quit()
+
+          print("Sent:", epub)
+          EOF
