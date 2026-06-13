@@ -1,0 +1,21 @@
+Settings:
+  max_history: 21
+  load_images: true
+  filename_template: "RSS精选_{date}.epub"
+
+Feeds:
+  - url: "https://nostalgia.bearblog.dev/feed/"
+    name: "银河铁道之夜"
+    title: "银河铁道之夜"
+    enabled: true
+    resolve_link:
+      enabled: true
+      method: "readability"
+
+  - url: "https://blog.solazy.me/feed/"
+    name: "So!azy"
+    title: "So!azy"
+    enabled: true
+    resolve_link:
+      enabled: true
+      method: "readability"
