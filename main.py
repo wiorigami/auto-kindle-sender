@@ -748,14 +748,14 @@ def convert_to_epub(feeds, load_images=True, feeds_config=None, custom_filename=
         timestamp = current_date.strftime('%Y%m%d_%H%M%S')
         filename = f'rss_feed_{timestamp}.epub'
     
-    # 输出 EPUB
-    import os
+import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.join(BASE_DIR, "articles")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 filename = os.path.basename(filename)  # 防止路径污染
+
 if not filename.endswith(".epub"):
     filename += ".epub"
 
@@ -763,7 +763,8 @@ final_path = os.path.join(OUTPUT_DIR, filename)
 
 epub.write_epub(final_path, book, {})
 
-print("📦 EPUB输出路径:", final_path)
+print(f"📦 EPUB输出路径: {final_path}")
+print(f"✅ EPUB 电子书已生成：{final_path}")
     print(f"✅ EPUB 电子书已生成：{filename}")
 
 def main():
