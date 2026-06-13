@@ -1,0 +1,70 @@
+name: Send Latest RSS EPUB to Kindle
+
+on:
+  schedule:
+    - cron: '30 23 * * *'  # UTC 23:30 = 北京时间 07:30
+  workflow_dispatch: {}
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Find latest EPUB in articles
+        id: find
+        run: |
+          echo "Scanning articles..."
+
+          latest_epub=$(find articles -type f -name "*.epub" | sort | tail -n 1)
+
+          if [ -z "$latest_epub" ]; then
+            echo "No EPUB found in articles/"
+            exit 1
+          fi
+
+          echo "LATEST_EPUB=$latest_epub" >> $GITHUB_ENV
+
+          echo "Latest EPUB: $latest_epub"
+
+      - name: Send EPUB to Kindle via SMTP
+        env:
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          KINDLE_EMAIL: wiorigami@kindle.com
+          FROM_EMAIL: ${{ secrets.SMTP_USER }}
+          EPUB: ${{ env.LATEST_EPUB }}
+        run: |
+          python3 << 'EOF'
+          import os
+          import smtplib
+          from email.message import EmailMessage
+
+          epub_path = os.environ["EPUB"]
+
+          msg = EmailMessage()
+          msg["Subject"] = "RSS Daily EPUB"
+          msg["From"] = os.environ["FROM_EMAIL"]
+          msg["To"] = os.environ["KINDLE_EMAIL"]
+          msg.set_content("Auto send latest RSS EPUB")
+
+          with open(epub_path, "rb") as f:
+              msg.add_attachment(
+                  f.read(),
+                  maintype="application",
+                  subtype="epub+zip",
+                  filename=os.path.basename(epub_path)
+              )
+
+          server = smtplib.SMTP(os.environ["SMTP_SERVER"], int(os.environ["SMTP_PORT"]))
+          server.starttls()
+          server.login(os.environ["SMTP_USER"], os.environ["SMTP_PASS"])
+          server.send_message(msg)
+          server.quit()
+
+          print("Sent:", epub_path)
+          EOF
