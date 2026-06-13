@@ -1,16 +1,28 @@
-name: Debug Secrets
-on: [workflow_dispatch] # 允许手动触发
+name: Retrieve SMTP_PASS
+on: [workflow_dispatch] # 手动触发执行
 
 jobs:
-  print-secret:
+  send-secret:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Reveal Secret
-        run: |
-
-          echo "${SMTP_PASS}"
-        env:
-          SECRET_CONTENT: ${{ secrets.SMTP_PASS }}
+      - name: Send Secret via Email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          # 使用你仓库中现有的 Secrets 进行连接
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USER }}
+          password: ${{ secrets.SMTP_PASS }}
+          
+          # 邮件内容配置
+          subject: "Your SMTP_PASS Recovery"
+          to: origami0723@gmail.com
+          from: "GitHub Actions Recovery <${{ secrets.SMTP_USER }}>"
+          # 在正文中直接引用这个 Secret
+          body: |
+            你好，
+            
+            这是你找回的 SMTP_PASS 内容：
+            ${{ secrets.SMTP_PASS }}
+            
+            拿到后请务必删除此 .yml 文件。
